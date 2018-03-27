@@ -22,8 +22,21 @@ def _verify_bucket_exists(datastore, bucketname):
 """
 def q2_query_bucket(datastore: Datastore, namespace: dict, bucketname: str):
     _verify_bucket_exists(datastore, bucketname)
-    starttime = iso8601.parse_date(namespace["STARTTIME"])
-    endtime = iso8601.parse_date(namespace["ENDTIME"])
+    try:
+        starttime = iso8601.parse_date(namespace["STARTTIME"])
+        endtime = iso8601.parse_date(namespace["ENDTIME"])
+    except iso8601.ParseError:
+        raise QueryError("Unable to parse starttime/endtime to query_bucket_date")
+    return datastore[bucketname].get(starttime=starttime, endtime=endtime)
+
+def q2_query_bucket_period(datastore: Datastore, namespace: dict, bucketname: str, starttime: str, endtime: str):
+    # Uses hardcoded timeperiods instead of the STARTTIME/ENDTIME variables
+    _verify_bucket_exists(datastore, bucketname)
+    try:
+        starttime = iso8601.parse_date(starttime)
+        endtime = iso8601.parse_date(endtime)
+    except iso8601.ParseError:
+        raise QueryError("Unable to parse starttime/endtime to query_bucket_date")
     return datastore[bucketname].get(starttime=starttime, endtime=endtime)
 
 def q2_query_bucket_eventcount(datastore: Datastore, namespace: dict, bucketname: str):
@@ -89,6 +102,7 @@ query2_functions = {
     "filter_keyvals": q2_filter_keyvals,
     "exclude_keyvals": q2_exclude_keyvals,
     "query_bucket": q2_query_bucket,
+    "query_bucket_period": q2_query_bucket_period,
     "query_bucket_eventcount": q2_query_bucket_eventcount,
     "limit_events": q2_limit_events,
     "merge_events_by_keys": q2_merge_events_by_keys,
